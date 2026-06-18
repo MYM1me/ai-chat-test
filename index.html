@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>페르소나 채팅 테스터</title>
+<style>
+  :root{
+    --bg:#f4f5f7;
+    --surface:#ffffff;
+    --surface-2:#f7f8fa;
+    --inset:#f0f2f5;
+    --border:#e4e7ec;
+    --border-strong:#d6dae1;
+    --text:#1c2128;
+    --muted:#727a86;
+    --faint:#9aa1ad;
+    --accent:#5b63f5;
+    --accent-hover:#4a52e8;
+    --accent-soft:#eef0fe;
+    --accent-border:#d4d8fb;
+    --char-bg:#f3f4f6;
+    --persona-bg:#eef0fe;
+    --persona-border:#dadcfb;
+    --ok:#1a9d6b;
+    --ok-soft:#e7f6ef;
+    --warn:#d9742c;
+    --warn-soft:#fbeee2;
+    --danger:#c2453d;
+    --danger-soft:#fbeceb;
+    --shadow-sm:0 1px 2px rgba(20,25,35,.05);
+    --shadow-md:0 4px 16px rgba(20,25,35,.08);
+    --radius:12px;
+    --radius-sm:9px;
+    --font:"Pretendard","Segoe UI Variable","Segoe UI",-apple-system,system-ui,"Malgun Gothic",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:var(--font);background:var(--bg);color:var(--text);
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .app{display:flex;height:100vh}
+
+  /* 스크롤바 */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d3d8df;border-radius:6px;border:2px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-thumb:hover{background:#bcc3cd;background-clip:content-box}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ===================== 사이드바 ===================== */
+  .sidebar{width:392px;min-width:392px;background:var(--surface);border-right:1px solid var(--border);
+    overflow-y:auto;padding:22px 20px 28px;display:flex;flex-direction:column;gap:20px}
+  .brand{display:flex;flex-direction:column;gap:6px}
+  .brand h1{font-size:17px;font-weight:700;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+  .brand .sub{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0}
+
+  .section{display:flex;flex-direction:column;gap:11px}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--faint);display:flex;align-items:center;gap:8px;margin:0}
+  .section-title::after{content:"";flex:1;height:1px;background:var(--border)}
+
+  label{display:block;font-size:12.5px;font-weight:600;color:#4a525e;margin-bottom:6px}
+  .field{margin:0}
+  input[type=text],input[type=password],input[type=number],select,textarea{
+    width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm);padding:9px 11px;font-size:13.5px;font-family:inherit;outline:none;
+    transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  input:hover:not(:focus),select:hover:not(:focus),textarea:hover:not(:focus){border-color:#c2c8d1}
+  textarea{resize:vertical;line-height:1.6;min-height:64px}
+  select{appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23727a86' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+  .row{display:flex;gap:10px}
+  .row>div{flex:1;min-width:0}
+  .hint{font-size:11.5px;color:var(--muted);margin:6px 0 0;line-height:1.5}
+
+  details{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:0;overflow:hidden;transition:border-color .15s}
+  details:hover{border-color:var(--border-strong)}
+  details summary{cursor:pointer;font-size:13px;font-weight:600;color:#3a424e;padding:11px 13px;
+    list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--faint);
+    border-bottom:1.5px solid var(--faint);transform:rotate(-45deg);transition:transform .18s;margin-right:1px}
+  details[open] summary::before{transform:rotate(45deg)}
+  details summary .req{font-size:10px;color:var(--accent);font-weight:700;background:var(--accent-soft);
+    padding:2px 6px;border-radius:5px;margin-left:auto}
+  details summary .opt{font-size:11px;color:var(--faint);font-weight:500;margin-left:auto}
+  details > textarea{border:none;border-top:1px solid var(--border);border-radius:0;background:var(--surface);
+    margin:0;display:block}
+  details > textarea:focus{box-shadow:inset 0 0 0 2px var(--accent-soft)}
+
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 14px;
+    font-size:13.5px;cursor:pointer;font-weight:600;font-family:inherit;transition:background .15s,transform .05s;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .btn:hover{background:var(--accent-hover)}
+  .btn:active{transform:translateY(1px)}
+  .btn.sub{background:var(--surface);border:1px solid var(--border-strong);color:#3a424e;font-weight:600}
+  .btn.sub:hover{background:var(--inset);border-color:#c2c8d1}
+  .savebar{display:flex;gap:8px}
+  .savebar .btn{flex:1}
+  .status{font-size:12px;color:var(--ok);min-height:16px;font-weight:600;text-align:center}
+
+  /* ===================== 메인 / 채팅 ===================== */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+    justify-content:space-between;gap:14px;background:var(--surface);box-shadow:var(--shadow-sm);z-index:2}
+  .topbar .meta{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;min-width:0}
+  .topbar .meta .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex-shrink:0}
+  .topbar .meta b{color:var(--text);font-weight:600}
+  .topbar .acts{display:flex;gap:8px;flex-shrink:0}
+  .topbar .acts .btn{padding:8px 12px;font-size:12.5px}
+
+  .chat{flex:1;overflow-y:auto;padding:28px 24px;display:flex;flex-direction:column;gap:20px}
+  .chat-inner{width:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+  .msg{max-width:78%;display:flex;flex-direction:column;gap:6px}
+  .msg.char{align-self:flex-start}
+  .msg.persona{align-self:flex-end;align-items:flex-end}
+  .msg .who{font-size:11.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px;padding:0 4px}
+  .msg.persona .who{flex-direction:row-reverse}
+  .bubble{padding:13px 16px;border-radius:14px;font-size:14.5px;line-height:1.75;white-space:pre-wrap;
+    word-break:break-word;box-shadow:var(--shadow-sm)}
+  .msg.char .bubble{background:var(--char-bg);border:1px solid var(--border);border-bottom-left-radius:5px;color:#23282f}
+  .msg.persona .bubble{background:var(--persona-bg);border:1px solid var(--persona-border);
+    border-bottom-right-radius:5px;color:#1f2330}
+
+  .count{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--inset);color:var(--muted)}
+  .count.good{background:var(--ok-soft);color:var(--ok)}
+  .count.bad{background:var(--warn-soft);color:var(--warn)}
+
+  .thinking{margin-top:2px;width:100%}
+  .thinking summary{font-size:11.5px;color:var(--faint);cursor:pointer;font-weight:600;padding:4px 4px;list-style:none}
+  .thinking summary::-webkit-details-marker{display:none}
+  .thinking summary::before{content:"💭 ";}
+  .thinking pre{white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
+    padding:11px;margin:6px 0 0;max-height:220px;overflow:auto;font-size:12px;line-height:1.6;color:#4a525e;
+    font-family:ui-monospace,"SF Mono",Consolas,monospace}
+
+  .msg .tools{display:flex;gap:14px;padding:0 6px;opacity:0;transition:opacity .15s}
+  .msg.persona .tools{flex-direction:row-reverse}
+  .msg:hover .tools{opacity:1}
+  .msg .tools button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11.5px;
+    padding:0;font-weight:600;font-family:inherit}
+  .msg .tools button:hover{color:var(--accent)}
+
+  .empty{margin:auto;color:var(--muted);text-align:center;font-size:13.5px;line-height:1.9;max-width:420px;
+    padding:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+  .empty .ico{font-size:34px;display:block;margin-bottom:12px}
+  .empty b{color:var(--text)}
+
+  /* ===================== 입력창 ===================== */
+  .composer{border-top:1px solid var(--border);padding:16px 24px;background:var(--surface)}
+  .composer-inner{max-width:880px;margin:0 auto;display:flex;gap:12px;align-items:flex-end}
+  .composer textarea{flex:1;min-height:52px;max-height:220px;border-radius:12px;padding:13px 15px;font-size:14px;
+    background:var(--surface-2)}
+  .composer textarea:focus{background:var(--surface)}
+  .composer .send{height:auto;align-self:stretch;padding:0 22px;min-width:90px;font-size:14px}
+
+  .loading{display:inline-block;width:15px;height:15px;border:2px solid var(--accent-border);
+    border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .err{align-self:center;background:var(--danger-soft);border:1px solid #f1c9c5;color:var(--danger);font-size:12.5px;
+    padding:11px 16px;border-radius:10px;max-width:90%;white-space:pre-wrap;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 사이드바 ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>🎭 페르소나 채팅 테스터</h1>
+      <p class="sub">캐릭터가 보낸 답변을 붙여넣으면, 페르소나 입장에서 자동으로 답해 줍니다.</p>
+    </div>
+
+    <div class="section">
+      <p class="section-title">API 키</p>
+      <div class="field">
+        <label>Anthropic (Claude)</label>
+        <input type="password" id="key_claude" placeholder="sk-ant-...">
+      </div>
+      <div class="field">
+        <label>OpenAI (ChatGPT)</label>
+        <input type="password" id="key_openai" placeholder="sk-...">
+      </div>
+      <div class="field">
+        <label>Google (Gemini)</label>
+        <input type="password" id="key_gemini" placeholder="AIza...">
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">모델 / 추론</p>
+      <div class="row">
+        <div class="field">
+          <label>모델</label>
+          <select id="model">
+            <optgroup label="OpenAI">
+              <option value="openai|gpt-5.4">GPT-5.4</option>
+            </optgroup>
+            <optgroup label="Anthropic">
+              <option value="claude|claude-opus-4-6">Claude Opus 4.6</option>
+              <option value="claude|claude-opus-4-7">Claude Opus 4.7</option>
+              <option value="claude|claude-opus-4-8" selected>Claude Opus 4.8</option>
+            </optgroup>
+            <optgroup label="Google">
+              <option value="gemini|gemini-2.5-pro">Gemini 2.5 Pro</option>
+              <option value="gemini|gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+              <option value="gemini|gemini-3.5-flash">Gemini 3.5 Flash</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field" style="max-width:130px">
+          <label>최대 추론 토큰</label>
+          <input type="number" id="reasoning" value="2000" min="0" step="500">
+        </div>
+      </div>
+      <p class="hint">0 = 추론 끄기. Claude는 최소 1024로 보정됩니다. OpenAI는 토큰 수를 추론 강도(low/medium/high)로 환산해 적용합니다.</p>
+
+      <div class="field">
+        <label>커스텀 모델 ID <span style="color:var(--faint);font-weight:500">(선택 · 위 모델 무시)</span></label>
+        <input type="text" id="customModel" placeholder="예: claude-opus-4-8 / gpt-5.4 / gemini-3.1-pro">
+        <p class="hint">API가 모델명을 거부하면 정확한 ID를 여기에 직접 입력하세요.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">설정 프롬프트</p>
+      <details>
+        <summary>세계관 <span class="opt">선택</span></summary>
+        <textarea id="world" rows="4" placeholder="세계관 설정. 비워둬도 됩니다."></textarea>
+      </details>
+      <details>
+        <summary>캐릭터 프롬프트 <span class="opt">선택</span></summary>
+        <textarea id="character" rows="4" placeholder="상대(AI 채팅 캐릭터)의 설정. 비워둬도 됩니다."></textarea>
+      </details>
+      <details open>
+        <summary>페르소나 프롬프트 <span class="req">필수</span></summary>
+        <textarea id="persona" rows="5" placeholder="내가 연기할 페르소나의 프로필 / 성격 / 말투 설정."></textarea>
+      </details>
+      <details>
+        <summary>추가 지침 <span class="opt">선택</span></summary>
+        <textarea id="extra" rows="3" placeholder="출력 방식에 대한 별도 지침. 예: 반말 사용, 행동 묘사 포함 등."></textarea>
+      </details>
+    </div>
+
+    <div class="section">
+      <div class="savebar">
+        <button class="btn" id="save">저장</button>
+        <button class="btn sub" id="export">내보내기</button>
+        <button class="btn sub" id="import">불러오기</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </aside>
+
+  <!-- ============ 채팅 ============ -->
+  <main class="main">
+    <div class="topbar">
+      <div class="meta"><span class="dot"></span><span id="topmeta">모델: Claude Opus 4.8 · 목표 길이 500~1000자</span></div>
+      <div class="acts">
+        <button class="btn sub" id="regen">↻ 마지막 재생성</button>
+        <button class="btn sub" id="clear">대화 비우기</button>
+      </div>
+    </div>
+    <div class="chat" id="chat">
+      <div class="chat-inner" id="chatInner">
+        <div class="empty" id="empty">
+          <span class="ico">🎭</span>
+          왼쪽에서 API 키와 페르소나 프롬프트를 입력하세요.<br>
+          아래 입력창에 <b>캐릭터가 보낸 답변</b>을 붙여넣고 보내면<br>
+          페르소나 입장에서의 답변이 생성됩니다.
+        </div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="composer-inner">
+        <textarea id="input" placeholder="캐릭터가 보낸 답변을 여기에 붙여넣고 Enter (Shift+Enter 줄바꿈)"></textarea>
+        <button class="btn send" id="send">보내기</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================== 상태 ============================== */
+const $ = id => document.getElementById(id);
+const FIELDS = ["key_claude","key_openai","key_gemini","model","reasoning","customModel","world","character","persona","extra"];
+let history = []; // {role:'char'|'persona', text, thinking}
+
+/* ============================== 저장 ============================== */
+function saveSettings(){
+  const data={};
+  FIELDS.forEach(f=>data[f]=$(f).value);
+  localStorage.setItem("personaTester", JSON.stringify(data));
+  localStorage.setItem("personaTesterHistory", JSON.stringify(history));
+  flash("저장됨 ✓");
+}
+function loadSettings(){
+  try{
+    const data=JSON.parse(localStorage.getItem("personaTester")||"{}");
+    FIELDS.forEach(f=>{ if(data[f]!==undefined) $(f).value=data[f]; });
+    history=JSON.parse(localStorage.getItem("personaTesterHistory")||"[]");
+  }catch(e){}
+  renderChat(); updateMeta();
+}
+function flash(msg,bad){
+  const s=$("status"); s.textContent=msg; s.style.color=bad?"var(--warn)":"var(--ok)";
+  clearTimeout(flash._t); flash._t=setTimeout(()=>s.textContent="",2500);
+}
+
+/* ============================== 렌더 ============================== */
+function countChars(t){ return (t||"").replace(/\s/g,"").length; } // 공백 제외 글자수
+function renderChat(){
+  const chat=$("chatInner");
+  chat.innerHTML="";
+  if(history.length===0){ chat.appendChild($("empty")); $("empty").style.display=""; return; }
+  history.forEach((m,i)=>{
+    const div=document.createElement("div");
+    div.className="msg "+(m.role==="char"?"char":"persona");
+    const cnt=countChars(m.text);
+    const cclass = m.role==="persona" ? (cnt>=500&&cnt<=1000?"good":(cnt>1000||cnt<400?"bad":"")) : "";
+    div.innerHTML=`<div class="who"><span>${m.role==="char"?"🤖 캐릭터":"🎭 페르소나"}</span>`+
+      (m.role==="persona"?`<span class="count ${cclass}">${cnt}자</span>`:``)+`</div>`;
+    const body=document.createElement("div"); body.className="bubble"; body.textContent=m.text; div.appendChild(body);
+    if(m.thinking){
+      const th=document.createElement("details"); th.className="thinking";
+      th.innerHTML=`<summary>추론 과정 보기</summary><pre></pre>`;
+      th.querySelector("pre").textContent=m.thinking; div.appendChild(th);
+    }
+    const tools=document.createElement("div"); tools.className="tools";
+    const cp=document.createElement("button"); cp.textContent="복사";
+    cp.onclick=()=>navigator.clipboard.writeText(m.text).then(()=>flash("복사됨 ✓"));
+    const del=document.createElement("button"); del.textContent="삭제";
+    del.onclick=()=>{ history.splice(i,1); saveQuiet(); renderChat(); };
+    tools.appendChild(cp); tools.appendChild(del); div.appendChild(tools);
+    chat.appendChild(div);
+  });
+  $("chat").scrollTop=$("chat").scrollHeight;
+}
+function saveQuiet(){ localStorage.setItem("personaTesterHistory",JSON.stringify(history)); }
+function updateMeta(){
+  const opt=$("model").selectedOptions[0];
+  const custom=$("customModel").value.trim();
+  $("topmeta").innerHTML=`모델: <b>${custom||opt.textContent}</b> · 목표 길이 500~1000자`;
+}
+
+/* ============================== 시스템 프롬프트 ============================== */
+function buildSystem(){
+  const world=$("world").value.trim();
+  const character=$("character").value.trim();
+  const persona=$("persona").value.trim();
+  const extra=$("extra").value.trim();
+  let s=`당신은 아래 '페르소나 프로필'의 인물이 되어 1인칭으로 직접 말합니다. 상대(캐릭터)가 보낸 메시지에 대해, 페르소나라면 어떻게 반응하고 말할지를 자연스럽게 작성하세요. 당신은 페르소나 본인이며, 해설자나 AI가 아닙니다.\n`;
+  if(world)     s+=`\n[세계관]\n${world}\n`;
+  if(character) s+=`\n[상대 캐릭터 정보]\n${character}\n`;
+  s+=`\n[페르소나 프로필 — 당신이 연기할 인물]\n${persona}\n`;
+  if(extra)     s+=`\n[추가 지침]\n${extra}\n`;
+  s+=`\n[작성 규칙]
+- 세계관·캐릭터·페르소나 설정 문구를 그대로 읊거나 나열하지 마세요. 설정은 행동과 말투에 자연스럽게 녹여 드러나게만 하세요.
+- 모든 설정을 한 답변에 욱여넣으려 하지 말고, 지금 이 상황과 대화 맥락에 필요한 부분만 자연스럽게 반영하세요.
+- 한국어로, 공백 제외 약 500~1000자 분량으로 작성하세요. (너무 짧거나 길지 않게)
+- 페르소나의 입장과 감정에 충실하게, 살아있는 사람처럼 반응하세요.
+- 메타 설명("페르소나로서 답하자면" 등) 없이 곧바로 인물의 발화/행동으로 답하세요.`;
+  return s;
+}
+
+/* ============================== API 호출 ============================== */
+function currentModel(){
+  const custom=$("customModel").value.trim();
+  const [provider,id]=$("model").value.split("|");
+  return {provider, id: custom||id};
+}
+function reasoningTokens(){ return Math.max(0, parseInt($("reasoning").value)||0); }
+// char(캐릭터)=user, persona=assistant 로 매핑
+function turnsFor(provider){
+  return history.map(m=>{
+    const isUser = m.role==="char";
+    if(provider==="gemini") return {role:isUser?"user":"model", parts:[{text:m.text}]};
+    return {role:isUser?"user":"assistant", content:m.text};
+  });
+}
+
+async function callClaude(system,msgs,model){
+  const key=$("key_claude").value.trim();
+  if(!key) throw new Error("Anthropic API 키를 입력하세요.");
+  const r=reasoningTokens();
+  const body={ model, max_tokens: Math.max(1500, (r>0?Math.max(r,1024):0)+2500), system, messages:msgs };
+  if(r>0) body.thinking={type:"enabled", budget_tokens:Math.max(r,1024)};
+  const res=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"content-type":"application/json","x-api-key":key,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify(body)
+  });
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error?.message||JSON.stringify(data));
+  let text="",thinking="";
+  (data.content||[]).forEach(b=>{ if(b.type==="text")text+=b.text; if(b.type==="thinking")thinking+=b.thinking||""; });
+  return {text:text.trim(), thinking};
+}
+
+async function callOpenAI(system,msgs,model){
+  const key=$("key_openai").value.trim();
+  if(!key) throw new Error("OpenAI API 키를 입력하세요.");
+  const r=reasoningTokens();
+  let effort = r<=0?null : r<=1500?"low" : r<=6000?"medium":"high";
+  const body={ model, messages:[{role:"system",content:system},...msgs], max_completion_tokens:3000 };
+  if(effort) body.reasoning_effort=effort;
+  const res=await fetch("https://api.openai.com/v1/chat/completions",{
+    method:"POST",
+    headers:{"content-type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify(body)
+  });
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error?.message||JSON.stringify(data));
+  return {text:(data.choices?.[0]?.message?.content||"").trim(), thinking:""};
+}
+
+async function callGemini(system,msgs,model){
+  const key=$("key_gemini").value.trim();
+  if(!key) throw new Error("Gemini API 키를 입력하세요.");
+  const r=reasoningTokens();
+  const body={
+    systemInstruction:{parts:[{text:system}]},
+    contents:msgs,
+    generationConfig:{ maxOutputTokens: (r>0?r:0)+3000 }
+  };
+  if(r>0) body.generationConfig.thinkingConfig={thinkingBudget:r};
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const res=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error?.message||JSON.stringify(data));
+  const parts=data.candidates?.[0]?.content?.parts||[];
+  return {text:parts.map(p=>p.text||"").join("").trim(), thinking:""};
+}
+
+async function generate(){
+  const {provider,id}=currentModel();
+  const system=buildSystem();
+  const msgs=turnsFor(provider);
+  if(provider==="claude") return callClaude(system,msgs,id);
+  if(provider==="openai") return callOpenAI(system,msgs,id);
+  if(provider==="gemini") return callGemini(system,msgs,id);
+}
+
+/* ============================== 동작 ============================== */
+let busy=false;
+async function send(){
+  if(busy) return;
+  const text=$("input").value.trim();
+  if(!text){ flash("캐릭터 답변을 입력하세요.",true); return; }
+  if(!$("persona").value.trim()){ flash("페르소나 프롬프트는 필수입니다.",true); return; }
+  history.push({role:"char",text});
+  $("input").value=""; renderChat(); saveQuiet();
+  await runGenerate();
+}
+async function runGenerate(){
+  busy=true;
+  const sendBtn=$("send"); sendBtn.innerHTML='<span class="loading"></span>';
+  // 로딩 풍선
+  const chat=$("chatInner"); const ph=document.createElement("div");
+  ph.className="msg persona"; ph.innerHTML='<div class="who"><span>🎭 페르소나</span></div><div class="bubble"><span class="loading"></span> 생성 중…</div>';
+  chat.appendChild(ph); $("chat").scrollTop=$("chat").scrollHeight;
+  try{
+    const {text,thinking}=await generate();
+    if(!text) throw new Error("빈 응답을 받았습니다. (추론 토큰이 출력 한도를 초과했을 수 있습니다)");
+    history.push({role:"persona",text,thinking});
+    saveQuiet(); renderChat();
+  }catch(e){
+    ph.remove();
+    const err=document.createElement("div"); err.className="err";
+    err.textContent="⚠ 오류: "+e.message; chat.appendChild(err);
+    $("chat").scrollTop=$("chat").scrollHeight;
+  }finally{
+    busy=false; sendBtn.textContent="보내기";
+  }
+}
+async function regen(){
+  if(busy) return;
+  // 마지막 페르소나 답변 제거 후 재생성
+  if(history.length && history[history.length-1].role==="persona") history.pop();
+  if(!history.length || history[history.length-1].role!=="char"){ flash("재생성할 답변이 없습니다.",true); return; }
+  saveQuiet(); renderChat(); await runGenerate();
+}
+
+/* ============================== 이벤트 ============================== */
+$("save").onclick=saveSettings;
+$("clear").onclick=()=>{ if(confirm("대화를 모두 지울까요?")){ history=[]; saveQuiet(); renderChat(); } };
+$("regen").onclick=regen;
+$("send").onclick=send;
+$("input").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } });
+$("model").onchange=updateMeta;
+$("customModel").oninput=updateMeta;
+
+$("export").onclick=()=>{
+  const data={}; FIELDS.forEach(f=>data[f]=$(f).value); data.history=history;
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="persona-tester-config.json"; a.click();
+};
+$("import").onclick=()=>$("importFile").click();
+$("importFile").onchange=e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+    const data=JSON.parse(rd.result);
+    FIELDS.forEach(f=>{ if(data[f]!==undefined) $(f).value=data[f]; });
+    if(Array.isArray(data.history)) history=data.history;
+    saveQuiet(); renderChat(); updateMeta(); flash("불러옴 ✓");
+  }catch(err){ flash("불러오기 실패: "+err.message,true); } };
+  rd.readAsText(file);
+};
+
+loadSettings();
+</script>
+</body>
+</html>
