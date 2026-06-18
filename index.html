@@ -228,6 +228,17 @@
 
     <div class="section">
       <p class="section-title">설정 프롬프트</p>
+      <div class="row">
+        <div class="field">
+          <label>캐릭터 이름 <span style="color:var(--accent);font-weight:700">{{char}}</span></label>
+          <input type="text" id="charName" placeholder="선택">
+        </div>
+        <div class="field">
+          <label>페르소나 이름 <span style="color:var(--accent);font-weight:700">{{user}}</span></label>
+          <input type="text" id="userName" placeholder="선택">
+        </div>
+      </div>
+      <p class="hint">프롬프트 안의 <b>{{char}}</b>는 상대 캐릭터, <b>{{user}}</b>는 페르소나(나)로 인식됩니다. 이름을 넣으면 그 이름으로 치환되고, 비워두면 토큰을 그대로 두고 지침으로 해석합니다.</p>
       <details>
         <summary>세계관 <span class="opt">선택</span></summary>
         <textarea id="world" rows="4" placeholder="세계관 설정. 비워둬도 됩니다."></textarea>
@@ -288,7 +299,7 @@
 <script>
 /* ============================== 상태 ============================== */
 const $ = id => document.getElementById(id);
-const FIELDS = ["key_claude","key_openai","key_gemini","model","reasoning","customModel","world","character","persona","extra"];
+const FIELDS = ["key_claude","key_openai","key_gemini","model","reasoning","customModel","charName","userName","world","character","persona","extra"];
 let history = []; // {role:'char'|'persona', text, thinking}
 
 /* ============================== 저장 ============================== */
@@ -348,13 +359,29 @@ function updateMeta(){
   $("topmeta").innerHTML=`모델: <b>${custom||opt.textContent}</b> · 목표 길이 500~1000자`;
 }
 
+/* ============================== 매크로 치환 ============================== */
+function applyMacros(t){
+  if(!t) return t;
+  const c=$("charName").value.trim(), u=$("userName").value.trim();
+  if(c) t=t.split("{{char}}").join(c);
+  if(u) t=t.split("{{user}}").join(u);
+  return t;
+}
+
 /* ============================== 시스템 프롬프트 ============================== */
 function buildSystem(){
-  const world=$("world").value.trim();
-  const character=$("character").value.trim();
-  const persona=$("persona").value.trim();
-  const extra=$("extra").value.trim();
+  const c=$("charName").value.trim(), u=$("userName").value.trim();
+  const world=applyMacros($("world").value.trim());
+  const character=applyMacros($("character").value.trim());
+  const persona=applyMacros($("persona").value.trim());
+  const extra=applyMacros($("extra").value.trim());
   let s=`당신은 아래 '페르소나 프로필'의 인물이 되어 1인칭으로 직접 말합니다. 상대(캐릭터)가 보낸 메시지에 대해, 페르소나라면 어떻게 반응하고 말할지를 자연스럽게 작성하세요. 당신은 페르소나 본인이며, 해설자나 AI가 아닙니다.\n`;
+  s+=`\n[호칭 인식 규칙]
+- {{char}} 는 상대 캐릭터(당신에게 말을 거는 AI 채팅 캐릭터)를 가리킵니다.
+- {{user}} 는 당신, 즉 당신이 연기하는 페르소나를 가리킵니다.
+- {{char}}의 말·행동은 상대의 것으로, {{user}}의 말·행동은 당신(페르소나) 자신의 것으로 이해하세요.`;
+  if(c||u) s+=`\n`+(c?`- 상대 캐릭터의 이름은 "${c}"입니다. `:``)+(u?`당신(페르소나)의 이름은 "${u}"입니다.`:``);
+  s+=`\n`;
   if(world)     s+=`\n[세계관]\n${world}\n`;
   if(character) s+=`\n[상대 캐릭터 정보]\n${character}\n`;
   s+=`\n[페르소나 프로필 — 당신이 연기할 인물]\n${persona}\n`;
@@ -378,9 +405,10 @@ function reasoningTokens(){ return Math.max(0, parseInt($("reasoning").value)||0
 // char(캐릭터)=user, persona=assistant 로 매핑
 function turnsFor(provider){
   return history.map(m=>{
+    const text=applyMacros(m.text);
     const isUser = m.role==="char";
-    if(provider==="gemini") return {role:isUser?"user":"model", parts:[{text:m.text}]};
-    return {role:isUser?"user":"assistant", content:m.text};
+    if(provider==="gemini") return {role:isUser?"user":"model", parts:[{text}]};
+    return {role:isUser?"user":"assistant", content:text};
   });
 }
 
